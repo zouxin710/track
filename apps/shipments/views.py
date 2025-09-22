@@ -1,7 +1,7 @@
 from flask import blueprints
 from flask_pydantic import validate
 
-from apps.shipments.schemas import ShipmentsOrdersRequest, Response
+from apps.shipments.schemas import *
 from apps.shipments.order import OrderList
 
 order_bp = blueprints.Blueprint("order", __name__)
@@ -13,10 +13,10 @@ def orders(query: ShipmentsOrdersRequest):
     pageSize = query.pageSize
     pageNum = query.pageNum
 
-    list = OrderList(uid=315, filters=query).get_list()
-    print(pageSize, pageNum, list)
+    content = OrderList(uid=315, filters=query).get_list()
+    print(pageSize, pageNum)
 
-    return Response(result=list)
+    return ShipmentsOrdersResponse(result=content)
 
 @track_bp.route("/track", methods=["GET"])
 @validate()

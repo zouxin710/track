@@ -4,7 +4,7 @@
 
 from peewee import *
 
-mysql_database = MySQLDatabase('logitrack', **{'charset': 'utf8', 'sql_mode': 'PIPES_AS_CONCAT', 'use_unicode': True, 'host': '192.168.0.200', 'user': 'amz', 'password': 'amz123456'})
+mysql_database = MySQLDatabase('jcs', **{'charset': 'utf8', 'sql_mode': 'PIPES_AS_CONCAT', 'use_unicode': True, 'host': 'localhost', 'user': 'root', 'password': '123456'})
 
 
 # 定义一个基础模型类，继承自Model

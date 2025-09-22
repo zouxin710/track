@@ -4,7 +4,7 @@ schemas.py模块
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional, Any, List
+from typing import Optional, Any, List, Literal
 
 
 class ShipmentsOrdersRequest(BaseModel):
@@ -36,7 +36,28 @@ class ShipmentsOrdersRequest(BaseModel):
     deliveryDate: Optional[List[str]] = Field(default=None, title="派送日期")
     signedDate: Optional[List[str]] = Field(default=None, title="签收日期")
 
+class ShipmentItem(BaseModel):
+    """内容列表中的货件条目"""
+    orderCode: str = Field(default=None,title="订单号")
+    firstLegTrackingNumber: str = Field(default=None,title="头程追踪号")
+    lastMileTrackingNumber: str = Field(default=None,title="尾程跟踪号")
+    countryCode: str = Field(default=None,title="目的国家")
+    warehouseCode: str = Field(default=None,title="仓库代码")
+    shipmentName: str = Field(default=None,title="货件名称")
 
+class ShipmentsOrdersResponse(BaseModel):
+    """出货单管理-出货单列表响应体"""
+    code: Optional[int] = Field(default=0, title="返回码")
+    message: Optional[str] = Field(default="SUCCESS", title="返回信息")
+    result: Optional[Any] = Field(default={}, title="返回结果数据")
+
+class ShipmentsOrdersResult(BaseModel):
+    """返回具体信息的结构"""
+    totalElements: int = Field(default=None,title="符合条件的总记录数")
+    totalPages: int = Field(default=None,title="总页数")
+    pageSize: int = Field(default=None,title="页面列表数大小")
+    pageNum: int = Field(default=None,title="页码数")
+    content: List[ShipmentItem] = Field(default=None,title="内容列表")
 
 
 class Response(BaseModel):
