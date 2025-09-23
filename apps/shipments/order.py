@@ -1,14 +1,15 @@
-"""接口类"""
+"""出货单管理接口类"""
 from functools import cached_property
+
+from flask_pydantic import ValidationError
 
 from apps.models import ShipmentOrderInfo
 from apps.shipments import schemas
-from apps.shipments.schemas import *
 
 
 class OrderList:
     """出货订单列表"""
-    def __init__(self, filters: ShipmentsOrdersRequest):
+    def __init__(self, filters: schemas.ShipmentsOrdersRequest):
         # 初始化实例时 传入请求体filters
         self.filters = filters
 
@@ -32,7 +33,7 @@ class OrderList:
             details = self.get_details()
         # **pagination.model_dump() 将字典解包为关键字参数
         # ShipmentsOrdersResult返回内容列表content,分页信息
-        return ShipmentsOrdersResult(content=details, **pagination.model_dump())
+        return schemas.ShipmentsOrdersResult(content=details, **pagination.model_dump())
 
     def get_total(self) -> int:
         """拿取查询的结果总数"""
@@ -43,16 +44,12 @@ class OrderList:
         query = self.query.order_by(ShipmentOrderInfo.create_time.desc()).paginate(self.filters.pageNum, self.filters.pageSize)
         records = []
         for q in query:
-            order = schemas.ShipmentItem.model_validate(q)
-            recode = schemas.ShipmentItem(**order.model_dump())
-            records.append(recode)
+            # model_validate 用于验证和转换输入数据为 Pydantic模型实例
+            #orderCode='GRKRMIwWfq' firstLegTrackingNumber='398snJcRZm' lastMileTrackingNumber='2rZqYjuus6' countryCode='Guyana' warehouseCode='KMK4uTBLeS' shipmentName='Lau Sai Wing' providerCode='jY1dIPHuou' shippingChannel='SrP07XRMWb' shippingMethod='b1bMyyHFpN' boxNum=607 shippingDate=datetime.datetime(2021, 2, 8, 20, 27, 22) departureDate=datetime.datetime(2024, 3, 9, 10, 58, 54) portArrivalDate=datetime.datetime(2025, 1, 17, 9, 37, 46) deliveryDate=datetime.datetime(2018, 6, 10, 0, 11, 28) signedDate=datetime.datetime(2010, 12, 8, 18, 20, 26) signedNum=687 shelvedTime=datetime.datetime(2007, 7, 17, 19, 32, 59) isException=687 createTime=datetime.datetime(2025, 6, 21, 22, 21, 8)
+            order = schemas.ShipmentOrdersItem.model_validate(q)
+            records.append(order)
         return records
 
-    # 再在 query 上追加 order + paginate
-    # query = query.order_by(ShipmentOrderInfo.create_time.desc()).paginate(f.pageNum or 1, f.pageSize or 10)
-    # print(4,query.dicts())
-    # rows = list(query.dicts())
-    # print(rows)
     @cached_property
     def query(self):
         """查询数据库操作"""
@@ -111,5 +108,88 @@ class OrderDetail:
 
     def get_detail(self):
         """获取详情数据"""
-        order = ShipmentOrderInfo.get(ShipmentOrderInfo.order_code == self.order_code)
-        return schemas.ShipmentItem(**order.model_dump())
+        try:
+            # 执行查询获取数据
+            query_result = self.query.get()
+
+            # 将查询结果转换为 Pydantic 模型
+            detail = schemas.ShipmentDetailItem.model_validate(
+                query_result,
+            )
+
+            return schemas.ShipmentDetailItem(**detail.model_dump())
+          # """    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  """
+        except ShipmentOrderInfo.DoesNotExist:
+            # 处理订单不存在的情况
+            return {
+                "error": "Order not found",
+                "message": f"No order found with code: {self.order_code}"
+            }, 404
+
+        except ValidationError as e:
+            # 处理数据验证错误
+            return {
+                "error": "Data validation error",
+                "details": e.errors()
+            }, 400
+
+        except Exception as e:
+            # 处理其他错误
+            return {
+                "error": "Internal server error",
+                "message": str(e)
+            }, 500
+
+    @cached_property
+    def query(self):
+        """查询数据库操作"""
+        # 创建查询对象 从数据库中选择ShipmentOrderInfo表中的所有记录
+        query = ShipmentOrderInfo.select(
+            ShipmentOrderInfo.order_code,
+            ShipmentOrderInfo.first_leg_tracking_number,
+            ShipmentOrderInfo.last_mile_tracking_number,
+            ShipmentOrderInfo.warehouse_code,
+            ShipmentOrderInfo.shipment_name,
+            ShipmentOrderInfo.shipment_name,
+            ShipmentOrderInfo.warehouse_code,
+            ShipmentOrderInfo.add_time,
+            ShipmentOrderInfo.provider_code,
+            ShipmentOrderInfo.box_num,
+            ShipmentOrderInfo.shipping_channel,
+            ShipmentOrderInfo.shipping_method,
+            ShipmentOrderInfo.country_code,
+            ShipmentOrderInfo.weight,
+            ShipmentOrderInfo.volume_weight,
+            ShipmentOrderInfo.billing_heavy,
+            ShipmentOrderInfo.price,
+            ShipmentOrderInfo.freight,
+            ShipmentOrderInfo.total_cost,
+            ShipmentOrderInfo.provider_cost,
+            ShipmentOrderInfo.customs_duty,
+            ShipmentOrderInfo.clearance_fee,
+            ShipmentOrderInfo.extra_category_fee,
+            ShipmentOrderInfo.super_product_fee,
+            ShipmentOrderInfo.deduction,
+            ShipmentOrderInfo.cost_difference,
+            ShipmentOrderInfo.shipping_status,
+            ShipmentOrderInfo.shipping_date,
+            ShipmentOrderInfo.departure_date,
+            ShipmentOrderInfo.port_arrival_date,
+            ShipmentOrderInfo.delivery_date,
+            ShipmentOrderInfo.signed_date,
+            ShipmentOrderInfo.shelved_time,
+            ShipmentOrderInfo.signed_num,
+            # ShipmentOrderInfo.total_tracking_number,
+            # ShipmentOrderInfo.shipping_days,
+            # ShipmentOrderInfo.warehouse_aging,
+            # ShipmentOrderInfo.navigation_aging,
+            # ShipmentOrderInfo.port_delivery_date,
+            # ShipmentOrderInfo.delivery_accept_aging,
+            # ShipmentOrderInfo.shelf_aging,
+            ShipmentOrderInfo.remark,
+            ShipmentOrderInfo.is_exception
+
+        )
+        query = query.where(ShipmentOrderInfo.order_code == self.order_code)
+        # print(query.get().order_code) # 获取查询结果的第一条记录的order_code
+        return query
