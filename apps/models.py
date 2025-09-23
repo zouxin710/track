@@ -4,7 +4,7 @@
 
 from peewee import *
 
-mysql_database = MySQLDatabase('jcs', **{'charset': 'utf8', 'sql_mode': 'PIPES_AS_CONCAT', 'use_unicode': True, 'host': 'localhost', 'user': 'root', 'password': '123456'})
+mysql_database = MySQLDatabase('jcs', **{'charset': 'utf8', 'sql_mode': 'PIPES_AS_CONCAT', 'use_unicode': True, 'host': 'localhost', 'user': 'root', 'password': 'root'})
 
 
 # 定义一个基础模型类，继承自Model
@@ -135,3 +135,13 @@ class ShipmentProviderTracking(BaseModel):
     class Meta:
         table_name = 'shipment_provider_tracking'
 
+# if __name__ == '__main__':
+#     # 调用connect()方法，使用这些参数建立实际的数据库连接
+#     mysql_database.connect()
+#     # ShipmentOrderInfo, ShipmentFirstLegTracking, ShipmentOrderExceptions, ShipmentExceptionHandlingInfo, ShipmentProviderContent
+#     mysql_database.create_tables([ShipmentOrderInfo, ShipmentFirstLegTracking, ShipmentOrderException, ShipmentExceptionHandle, ShipmentProviderTracking])
+#     # 检查并关闭连接
+#     if not mysql_database.is_closed():
+#         mysql_database.close()
+#
+#         print("数据库连接已关闭")

@@ -10,14 +10,21 @@ track_bp = blueprints.Blueprint("track", __name__)
 @order_bp.route("/orders", methods=["GET"])
 @validate()
 def orders(query: ShipmentsOrdersRequest):
-    pageSize = query.pageSize
-    pageNum = query.pageNum
+    """获取订单列表的逻辑函数"""
+    content = OrderList(filters=query).get_list()
 
-    content = OrderList(uid=315, filters=query).get_list()
-    print(pageSize, pageNum)
+    return Response(result=content)
 
-    return ShipmentsOrdersResponse(result=content)
 
+@order_bp.route("/orders/<string:order_id>", methods=["GET"])
+@validate()
+def order_detail():
+    """获取根据订单号获取订单详情的逻辑函数"""
+
+
+
+
+    return Response()
 @track_bp.route("/track", methods=["GET"])
 @validate()
 def track():
