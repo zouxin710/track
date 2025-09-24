@@ -63,6 +63,7 @@ class OrderList:
             ShipmentOrderInfo.provider_code,
             ShipmentOrderInfo.shipping_channel,
             ShipmentOrderInfo.shipping_method,
+            ShipmentOrderInfo.shipping_status,
             ShipmentOrderInfo.box_num,
             ShipmentOrderInfo.shipping_date,
             ShipmentOrderInfo.departure_date,
@@ -78,21 +79,49 @@ class OrderList:
         f = self.filters
         # 字符串精确匹配条件
         if f.orderCode:
-            query = query.where(ShipmentOrderInfo.order_code == f.orderCode)
+            query = query.where(ShipmentOrderInfo.order_code.contains(f.orderCode))
         if f.firstLegTrackingNumber:
-            query = query.where(ShipmentOrderInfo.first_leg_tracking_number == f.firstLegTrackingNumber)
+            query = query.where(ShipmentOrderInfo.first_leg_tracking_number.contains(f.firstLegTrackingNumber))
         if f.lastMileTrackingNumber:
-            query = query.where(ShipmentOrderInfo.last_mile_tracking_number == f.lastMileTrackingNumber)
+            query = query.where(ShipmentOrderInfo.last_mile_tracking_number.contains(f.lastMileTrackingNumber))
         if f.shipmentName:
             query = query.where(ShipmentOrderInfo.shipment_name == f.shipmentName)
         if f.providerCode:
             query = query.where(ShipmentOrderInfo.provider_code == f.providerCode)
         if f.shippingMethod:
             query = query.where(ShipmentOrderInfo.shipping_method == f.shippingMethod)
+        if f.shippingStatus:
+            query = query.where(ShipmentOrderInfo.shipping_status == f.shippingStatus)
         if f.countryCode:
             query = query.where(ShipmentOrderInfo.country_code == f.countryCode)
         if f.warehouseCode:
             query = query.where(ShipmentOrderInfo.warehouse_code == f.warehouseCode)
+
+        # 时间数组区间判断
+        if f.shippingDate and len(f.shippingDate) == 2:
+            # 发货时间范围
+            t1, t2 = sorted(f.shippingDate)
+            query = query.where(ShipmentOrderInfo.shipping_date.between(t1, t2))
+
+        if f.departureDate and len(f.departureDate) == 2:
+            # 开船时间范围
+            t1, t2 = sorted(f.departureDate)
+            query = query.where(ShipmentOrderInfo.departure_date.between(t1, t2))
+
+        if f.portArrivalDate and len(f.portArrivalDate) == 2:
+            # 到港时间范围
+            t1, t2 = sorted(f.portArrivalDate)
+            query = query.where(ShipmentOrderInfo.port_arrival_date.between(t1, t2))
+
+        if f.deliveryDate and len(f.deliveryDate) == 2:
+            # 派送时间范围
+            t1, t2 = sorted(f.deliveryDate)
+            query = query.where(ShipmentOrderInfo.delivery_date.between(t1, t2))
+
+        if f.signedDate and len(f.signedDate) == 2:
+            # 签收时间范围
+            t1, t2 = sorted(f.signedDate)
+            query = query.where(ShipmentOrderInfo.signed_date.between(t1, t2))
 
         # 布尔值条件
         if f.isException is not None:  # 注意这里要区分None和False
