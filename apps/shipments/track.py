@@ -1,4 +1,6 @@
 """头程轨迹跟踪接口类"""
+import random
+import time
 from datetime import datetime
 from functools import cached_property
 
@@ -122,7 +124,7 @@ class PendingList:
         if f.providerCode:
             query = query.where(ShipmentOrderInfo.provider_code == f.providerCode)
         if f.isPending:  # 仅展示待审核订单
-            query = query.where(ShipmentFirstLegTracking.identify_status == '待审核')
+            query = query.where(ShipmentFirstLegTracking.identify_status == 'PENDING')
         return query
 
 
@@ -157,8 +159,10 @@ class AddNode:
         """添加节点逻辑"""
         item = self.item.model_dump(by_alias=True)
         # 添加额外的字段
+        # 随机生成一个唯一id
+        item["node_id"] = str(int(time.time())) + str(random.randint(100, 1000))
         item["artificial_review_time"] = datetime.now()
-        item["identify_status"] = "人工已审核"
+        item["identify_status"] = "COMPLETE"  # 人工已审核
         item["source"] = 1  # 人工添加
         item["create_time"] = datetime.now()
         item['update_time'] = datetime.now()
