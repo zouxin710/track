@@ -10,9 +10,11 @@ mysql_database = MySQLDatabase('jcs', **{'charset': 'utf8', 'sql_mode': 'PIPES_A
 # 定义一个基础模型类，继承自Model
 class BaseModel(Model):
     """定义一个内部Meta类，用于配置模型的元数据"""
+
     class Meta:
         # 设置数据库连接，指向之前定义的database对象
         database = mysql_database
+
 
 class ShipmentOrderInfo(BaseModel):
     """所有订单基本信息表/订单列表/订单明细"""
@@ -63,6 +65,7 @@ class ShipmentOrderInfo(BaseModel):
     class Meta:
         table_name = 'shipment_order_info'
 
+
 class ShipmentFirstLegTracking(BaseModel):
     """所有订单头程追踪表(记录ai提示词结果的表)"""
     order_code = CharField()
@@ -89,16 +92,15 @@ class ShipmentFirstLegTracking(BaseModel):
         indexes = (
             (('order_code', 'node_id'), True),
         )
+
+
 class ShipmentExceptionHandle(BaseModel):
     """订单异常处置记录表"""
+    exception_id = IntegerField()
     order_code = CharField(index=True)
-    shipment_name = CharField(null=True)
-    exception_type = CharField(null=True)
-    exception_node = CharField(null=True)
-    exception_date = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP")], null=True)
-    exception_status = CharField(constraints=[SQL("DEFAULT '待处理'")], null=True)
     content = TextField(null=True)
-    operator_uid = IntegerField(null=True)
+    status = CharField(constraints=[SQL("DEFAULT '待处理'")])
+    operator_uid = IntegerField()
     operator_name = CharField(null=True)
     create_time = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP")])
     update_time = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP")])
@@ -106,22 +108,22 @@ class ShipmentExceptionHandle(BaseModel):
     class Meta:
         table_name = 'shipment_exception_handle'
 
+
 class ShipmentOrderException(BaseModel):
     """订单所有异常数据表"""
-    order_code = CharField(index=True, null=True)
-    exception_type = CharField(null=True)
-    exception_node = CharField(null=True)
-    exception_date = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP")], null=True)
-    exception_status = CharField(constraints=[SQL("DEFAULT '待处理'")], null=True)
+    order_code = CharField(index=True)
+    exception_type = CharField()
+    exception_node = CharField()
     exception_describe = TextField(null=True)
-    status_change = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    status = CharField()
     operator_uid = IntegerField(null=True)
     operator_name = CharField(null=True)
-    identify_time = DateTimeField(null=True)
-    operate_content = TextField(null=True)
+    create_time = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP")])
+    update_time = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP")])
 
     class Meta:
         table_name = 'shipment_order_exception'
+
 
 class ShipmentProviderTracking(BaseModel):
     """物流接口返回的原始信息记录表"""
@@ -139,7 +141,7 @@ class ShipmentProviderTracking(BaseModel):
 #     # 调用connect()方法，使用这些参数建立实际的数据库连接
 #     mysql_database.connect()
 #     # ShipmentOrderInfo, ShipmentFirstLegTracking, ShipmentOrderExceptions, ShipmentExceptionHandlingInfo, ShipmentProviderContent
-#     mysql_database.create_tables([ShipmentOrderInfo, ShipmentFirstLegTracking, ShipmentOrderException, ShipmentExceptionHandle, ShipmentProviderTracking])
+#     mysql_database.create_tables([ShipmentExceptionHandle])
 #     # 检查并关闭连接
 #     if not mysql_database.is_closed():
 #         mysql_database.close()

@@ -36,21 +36,67 @@ class ShipmentsOrdersRequest(BaseModelWithORM):
     signedDate: Optional[List[datetime]] = Field(default=None, title="签收日期")
 
 
-class ShipmentTrackingRequest(BaseModelWithORM):
+class ShipmentsOrderUpdateRequest(BaseModelWithORM):
+    """出货单管理-出货单更新请求体"""
+    firstLegTrackingNumber: str = Field(..., title="头程追踪号", alias="first_leg_tracking_number")
+    lastMileTrackingNumber: str = Field(..., title="尾程追踪号", alias="last_mile_tracking_number")
+    shipmentName: str = Field(..., title="货件名称", alias="shipment_name")
+    warehouseCode: str = Field(..., title="仓库代码", alias="warehouse_code")
+    addTime: str = Field(..., title="创建时间", alias="add_time")
+    providerCode: str = Field(..., title="物流商", alias="provider_code")
+    boxNum: str = Field(..., title="箱数", alias="box_num")
+    shippingChannel: str = Field(..., title="物流渠道", alias="shipping_channel")
+    shippingMethod: str = Field(..., title="运输方式", alias="shipping_method")
+    countryCode: str = Field(..., title="目的国家", alias="country_code")
+    weight: Decimal = Field(..., title="重量", alias="weight")
+    volumeWeight: Decimal = Field(..., title="体积重", alias="volume_weight")
+    billingHeavy: Decimal = Field(..., title="计费重", alias="billing_heavy")
+    price: Decimal = Field(..., title="单价", alias="price")
+    freight: Decimal = Field(..., title="运费", alias="freight")
+    totalCost: Decimal = Field(..., title="合计费用", alias="total_cost")
+    providerCost: Decimal = Field(..., title="物流商费用", alias="provider_cost")
+    customsDuty: Decimal = Field(..., title="关税", alias="customs_duty")
+    clearanceFee: Decimal = Field(..., title="清关费", alias="clearance_fee")
+    extraCategoryFee: Decimal = Field(..., title="附加费", alias="extra_category_fee")
+    superProductFee: Decimal = Field(..., title="超品名费", alias="super_product_fee")
+    deduction: Decimal = Field(..., title="扣减", alias="deduction")
+    costDifference: Decimal = Field(..., title="费用差异", alias="cost_difference")
+
+
+class ShipmentsTrackingRequest(BaseModelWithORM):
     """头程轨迹跟踪-头程轨迹所有节点请求体"""
     identifyStatus: Optional[str] = Field(default=None, title="审核状态", alias="identify_status")
 
 
 class ShipmentsPendingRequest(BaseModelWithORM):
-    """头程轨迹跟踪-待审核轨迹订单列表请求体"""
+    """头程轨迹跟踪-轨迹订单节点列表请求体"""
     pageSize: int = Field(default=10, title="每页的大小")
     pageNum: int = Field(default=1, title="当前页码")
     shipmentName: Optional[str] = Field(default=None, title="货件名称")
     providerCode: Optional[str] = Field(default=None, title="物流商")
     orderCode: Optional[str] = Field(default=None, title="订单号")
+    isPending: Optional[bool] = Field(default=False, title="是否待审核")
 
 
-class ShipmentExceptionsRequest(BaseModelWithORM):
+class ShipmentsReviewPostRequest(BaseModelWithORM):
+    """头程轨迹跟踪-审核提交请求体"""
+    orderCode: str = Field(..., title="订单号")
+    artificialTrackType: str = Field(..., title="人工轨迹类型", alias="artificial_track_type")
+    artificialTrackNode: str = Field(..., title="人工轨迹节点", alias="artificial_track_node")
+    artificialTrackNodeDate: datetime = Field(..., title="人工节点时间", alias="artificial_track_node_date")
+    trackContent: str = Field(..., title="人工轨迹文本说明", alias="track_content")
+
+
+class ShipmentsAddNodeRequest(BaseModelWithORM):
+    """头程轨迹跟踪-添加节点请求体"""
+    orderCode: str = Field(..., title="订单号")
+    artificialTrackType: str = Field(..., title="人工轨迹类型", alias="artificial_track_type")
+    artificialTrackNode: str = Field(..., title="人工轨迹节点", alias="artificial_track_node")
+    artificialTrackNodeDate: datetime = Field(..., title="人工节点时间", alias="artificial_track_node_date")
+    artificialTrackText: str = Field(..., title="人工轨迹文本说明", alias="artificial_track_text")
+
+
+class ShipmentsExceptionsRequest(BaseModelWithORM):
     """异常处置-异常列表请求体"""
     pageSize: int = Field(default=10, title="每页的大小")
     pageNum: int = Field(default=1, title="当前页码")
@@ -60,6 +106,13 @@ class ShipmentExceptionsRequest(BaseModelWithORM):
     exceptionType: Optional[str] = Field(default=None, title="异常类型")
     exceptionNode: Optional[str] = Field(default=None, title="异常节点")
     exceptionDate: Optional[List[datetime]] = Field(default=None, title="触发时间(我们系统计算的时间)")
+    status: Optional[List[str]] = Field(default=None, title="触发时间(我们系统计算的时间)")
+
+
+class ShipmentsExceptionsProcessingRequest(BaseModelWithORM):
+    """异常处置-异常处置操作body参数"""
+    content: str = Field(..., title="异常处理内容")
+    status: str = Field(..., title="异常处置状态")
 
 
 class ShipmentsExceptionsLogsRequest(BaseModelWithORM):
@@ -83,7 +136,7 @@ class PaginationResponse(BaseModelWithORM):
         self.totalPages = math.ceil(self.totalElements / self.pageSize)
 
 
-class ShipmentOrdersItem(BaseModelWithORM):
+class ShipmentsOrdersItem(BaseModelWithORM):
     """出货单管理-订单列表中要返回的的货件字段"""
     orderCode: str = Field(..., title="订单号", alias="order_code")  # ...表示该字段必填
     firstLegTrackingNumber: str = Field(..., title="头程追踪号", alias="first_leg_tracking_number")
@@ -112,10 +165,10 @@ class ShipmentsOrdersResult(PaginationResponse):
     出货单管理-返回具体信息的结构
     content存储内容列表 该类继承分页响应体 创建时带上分页参数
     """
-    content: List[ShipmentOrdersItem] = Field(default=None, title="内容列表")
+    content: List[ShipmentsOrdersItem] = Field(default=None, title="内容列表")
 
 
-class ShipmentDetailItem(BaseModelWithORM):
+class ShipmentsDetailItem(BaseModelWithORM):
     """出货单管理-订单详情页中要返回的的字段"""
     orderCode: str = Field(..., title="订单号", alias="order_code")  # ...表示该字段必填
     firstLegTrackingNumber: str = Field(..., title="头程追踪号", alias="first_leg_tracking_number")
@@ -195,7 +248,7 @@ class ShipmentsPendingItem(BaseModelWithORM):
     pendingCount: int = Field(default=0, title="待审核数量", alias="pending_count")
 
 
-class ShipmentsPendingResult(BaseModelWithORM):
+class ShipmentsPendingResult(PaginationResponse):
     """头程轨迹跟踪-待审核列表的响应体"""
     content: List[ShipmentsPendingItem] = Field(..., title="内容列表")
 
@@ -207,6 +260,7 @@ class ExceptionsItem(BaseModelWithORM):
     exceptionType: str = Field(..., title="异常类型", alias="exception_type")
     exceptionNode: str = Field(..., title="异常节点", alias="exception_node")
     exceptionDate: datetime = Field(..., title="触发时间", alias="exception_date")
+    status: str = Field(..., title="处置状态", alias="status")
 
 
 class ExceptionsJoinItem(BaseModelWithORM):
@@ -216,36 +270,49 @@ class ExceptionsJoinItem(BaseModelWithORM):
     firstLegTrackingNumber: Optional[str] = Field(default=None, title="头程追踪号", alias="first_leg_tracking_number")
 
 
-class ShipmentExceptionsItem(ExceptionsItem, ExceptionsJoinItem):
+class ShipmentsExceptionsItem(ExceptionsItem, ExceptionsJoinItem):
     """异常处置管理-返回具体信息的结构"""
     pass
 
 
 class ShipmentsExceptionsResult(PaginationResponse):
     """异常处置管理-返回具体信息的结构"""
-    content: List[ShipmentExceptionsItem] = Field(default=None, title="内容列表")
+    content: List[ShipmentsExceptionsItem] = Field(default=None, title="内容列表")
 
 
-class ShipmentsExceptionLogsItem(BaseModelWithORM):
-    """异常处置管理-返回异常操作记录的所有需求字段"""
+class ExceptionLogsItem(BaseModelWithORM):
+    """异常处置记录-异常记录表中可以查询到的需求字段"""
     id: int = Field(..., title="处理记录id", alias="id")
-    shipmentName: str = Field(..., title="货件名称", alias="shipment_name")
-    firstLegTrackingNumber: str = Field(..., title="头程追踪号", alias="first_leg_tracking_number")
-    exceptionType: str = Field(..., title="异常类型", alias="exception_type")
-    exceptionNode: str = Field(..., title="异常节点", alias="exception_node")
-    exceptionDate: datetime = Field(..., title="触发时间", alias="exception_date")
-    exceptionStatus: str = Field(..., title="异常处置状态", alias="exception_status")
+    status: str = Field(..., title="异常处置状态", alias="status")
+    content: str = Field(..., title="处置记录", alias="operation")
     operatorName: str = Field(..., title="处置人姓名", alias="operator_name")
-    content: str = Field(..., title="处置内容", alias="operation")
+
+
+class ExceptionLogsJoinInfoItem(BaseModelWithORM):
+    """异常处置记录-这个字段关联在order订单表中"""
+    firstLegTrackingNumber: Optional[str] = Field(default=None, title="头程追踪号", alias="first_leg_tracking_number")
+    shipmentName: Optional[str] = Field(default=None, title="货件名称", alias="shipment_name")
+
+
+class ExceptionLogsJoinExceptionItem(BaseModelWithORM):
+    """异常处置记录-这个字段关联在异常信息中"""
+    exceptionType: Optional[str] = Field(default=None, title="异常类型", alias="exception_type")
+    exceptionNode: Optional[str] = Field(default=None, title="异常节点", alias="exception_node")
+    createTime: Optional[datetime] = Field(default=None, title="异常触发时间", alias="create_time")
+
+
+class ShipmentsExceptionLogsItem(ExceptionLogsItem, ExceptionLogsJoinInfoItem, ExceptionLogsJoinExceptionItem):
+    """异常处置记录-返回具体信息的结构"""
+    pass
 
 
 class ShipmentsExceptionLogsResult(PaginationResponse):
-    """异常处置管理-异常处置记录列表的返回响应体"""
+    """异常处置记录-异常处置记录列表的返回响应体"""
     content: List[ShipmentsExceptionLogsItem] = Field(default=None, title="内容列表")
 
 
 class Response(BaseModelWithORM):
     """响应体"""
-    code: Optional[int] = Field(default=200, title="返回码")
+    code: Optional[int] = Field(default=0, title="返回码")
     message: Optional[str] = Field(default="SUCCESS", title="返回信息")
     result: Optional[Any] = Field(default={}, title="返回结果数据")

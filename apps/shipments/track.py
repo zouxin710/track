@@ -1,4 +1,5 @@
 """头程轨迹跟踪接口类"""
+from datetime import datetime
 from functools import cached_property
 
 from peewee import JOIN, fn
@@ -10,13 +11,13 @@ from apps.shipments import schemas
 class TrackingNodes:
     """当前订单号下的所有轨迹节点"""
 
-    def __init__(self, order_code: str, filters: schemas.ShipmentTrackingRequest):
+    def __init__(self, order_code: str, filters: schemas.ShipmentsTrackingRequest):
         self.order_code = order_code
         self.filters = filters
 
     def get_tracking(self):
         """获取当下订单的所有轨迹节点"""
-        query = self.query.order_by(ShipmentFirstLegTracking.track_time.desc())
+        query = self.query.order_by(ShipmentFirstLegTracking.track_time.asc())
         # 存放节点的列表
         node_list = []
         for q in query:
@@ -56,13 +57,13 @@ class TrackingNodes:
 
 
 class PendingList:
-    """待审核轨迹订单列表"""
+    """轨迹订单列表"""
 
     def __init__(self, filters: schemas.ShipmentsPendingRequest):
         self.filters = filters
 
     def get_list(self):
-        """获取待审核轨迹订单列表"""
+        """获取轨迹订单列表"""
         pagination = schemas.PaginationResponse(
             totalElements=self.get_total(),
             pageNum=self.filters.pageNum,
@@ -78,7 +79,7 @@ class PendingList:
         return schemas.ShipmentsPendingResult(content=details, **pagination.model_dump())
 
     def get_total(self):
-        """获取待审核轨迹订单总数"""
+        """获取查询结果总数"""
         return self.query.count()
 
     def get_details(self):
@@ -107,12 +108,11 @@ class PendingList:
             # 统计每个订单对应的追踪记录数（重复次数）
             # fn是用于访问数据库函数的一个对象
             # 通过它可以调用像 COUNT、SUM、AVG、MAX、MIN 等各种数据库原生支持的聚合函数或者其他函数，来实现更复杂的查询操作
-            fn.COUNT(ShipmentOrderInfo.order_code).alias('pending_count')
-        ).group_by(ShipmentOrderInfo.order_code)
-                 .join(ShipmentFirstLegTracking,
-                       on=(ShipmentOrderInfo.order_code == ShipmentFirstLegTracking.order_code),
-                       join_type=JOIN.INNER)
-                 .where(ShipmentFirstLegTracking.identify_status == '待审核'))
+            fn.COUNT(ShipmentFirstLegTracking.order_code).alias('pending_count')
+        ).join(ShipmentFirstLegTracking,
+               on=(ShipmentOrderInfo.order_code == ShipmentFirstLegTracking.order_code),
+               join_type=JOIN.LEFT_OUTER)
+                 .group_by(ShipmentOrderInfo.order_code))
 
         f = self.filters
         if f.orderCode:
@@ -121,5 +121,48 @@ class PendingList:
             query = query.where(ShipmentOrderInfo.shipment_name == f.shipmentName)
         if f.providerCode:
             query = query.where(ShipmentOrderInfo.provider_code == f.providerCode)
-
+        if f.isPending:  # 仅展示待审核订单
+            query = query.where(ShipmentFirstLegTracking.identify_status == '待审核')
         return query
+
+
+class TrackReview:
+    """人工审核提交"""
+
+    def __init__(self, id: int, item: schemas.ShipmentsReviewPostRequest):
+        self.id = id
+        self.item = item
+
+    def submit(self):
+        """人工审核提交逻辑"""
+        item = self.item.model_dump(by_alias=True)
+        # 添加额外的字段
+        item["artificial_review_time"] = datetime.now()
+        item["identify_status"] = "COMPLETE"  # 人工已审核
+        item["source"] = 1  # 人工添加
+        item['update_time'] = datetime.now()
+        # 审核人姓名
+
+        # 执行操作
+        ShipmentFirstLegTracking.update(**item).where(ShipmentFirstLegTracking.id == self.id).execute()
+
+
+class AddNode:
+    """人工添加节点轨迹"""
+
+    def __init__(self, item: schemas.ShipmentsAddNodeRequest):
+        self.item = item
+
+    def add(self):
+        """添加节点逻辑"""
+        item = self.item.model_dump(by_alias=True)
+        # 添加额外的字段
+        item["artificial_review_time"] = datetime.now()
+        item["identify_status"] = "人工已审核"
+        item["source"] = 1  # 人工添加
+        item["create_time"] = datetime.now()
+        item['update_time'] = datetime.now()
+        # 审核人姓名
+
+        # 执行添加操作
+        ShipmentFirstLegTracking.create(**item)

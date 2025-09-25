@@ -1,4 +1,5 @@
 """出货单管理接口类"""
+from datetime import datetime
 from functools import cached_property
 
 from flask_pydantic import ValidationError
@@ -9,6 +10,7 @@ from apps.shipments import schemas
 
 class OrderList:
     """出货订单列表"""
+
     def __init__(self, filters: schemas.ShipmentsOrdersRequest):
         # 初始化实例时 传入请求体filters
         self.filters = filters
@@ -45,8 +47,8 @@ class OrderList:
         records = []
         for q in query:
             # model_validate 用于验证和转换输入数据为 Pydantic模型实例
-            #orderCode='GRKRMIwWfq' firstLegTrackingNumber='398snJcRZm' lastMileTrackingNumber='2rZqYjuus6' countryCode='Guyana' warehouseCode='KMK4uTBLeS' shipmentName='Lau Sai Wing' providerCode='jY1dIPHuou' shippingChannel='SrP07XRMWb' shippingMethod='b1bMyyHFpN' boxNum=607 shippingDate=datetime.datetime(2021, 2, 8, 20, 27, 22) departureDate=datetime.datetime(2024, 3, 9, 10, 58, 54) portArrivalDate=datetime.datetime(2025, 1, 17, 9, 37, 46) deliveryDate=datetime.datetime(2018, 6, 10, 0, 11, 28) signedDate=datetime.datetime(2010, 12, 8, 18, 20, 26) signedNum=687 shelvedTime=datetime.datetime(2007, 7, 17, 19, 32, 59) isException=687 createTime=datetime.datetime(2025, 6, 21, 22, 21, 8)
-            order = schemas.ShipmentOrdersItem.model_validate(q)
+            # orderCode='GRKRMIwWfq' firstLegTrackingNumber='398snJcRZm' lastMileTrackingNumber='2rZqYjuus6' countryCode='Guyana' warehouseCode='KMK4uTBLeS' shipmentName='Lau Sai Wing' providerCode='jY1dIPHuou' shippingChannel='SrP07XRMWb' shippingMethod='b1bMyyHFpN' boxNum=607 shippingDate=datetime.datetime(2021, 2, 8, 20, 27, 22) departureDate=datetime.datetime(2024, 3, 9, 10, 58, 54) portArrivalDate=datetime.datetime(2025, 1, 17, 9, 37, 46) deliveryDate=datetime.datetime(2018, 6, 10, 0, 11, 28) signedDate=datetime.datetime(2010, 12, 8, 18, 20, 26) signedNum=687 shelvedTime=datetime.datetime(2007, 7, 17, 19, 32, 59) isException=687 createTime=datetime.datetime(2025, 6, 21, 22, 21, 8)
+            order = schemas.ShipmentsOrdersItem.model_validate(q)
             records.append(order)
         return records
 
@@ -54,7 +56,7 @@ class OrderList:
     def query(self):
         """查询数据库操作"""
         query = ShipmentOrderInfo.select(
-     ShipmentOrderInfo.order_code,
+            ShipmentOrderInfo.order_code,
             ShipmentOrderInfo.first_leg_tracking_number,
             ShipmentOrderInfo.last_mile_tracking_number,
             ShipmentOrderInfo.country_code,
@@ -130,8 +132,10 @@ class OrderList:
         # query:未排序的Peewee查询对象(ModelSelect)
         return query
 
+
 class OrderDetail:
     """出货订单详情"""
+
     def __init__(self, order_code: str):
         self.order_code = order_code
 
@@ -142,12 +146,12 @@ class OrderDetail:
             query_result = self.query.get()
 
             # 将查询结果转换为 Pydantic 模型
-            detail = schemas.ShipmentDetailItem.model_validate(
+            detail = schemas.ShipmentsDetailItem.model_validate(
                 query_result,
             )
 
-            return schemas.ShipmentDetailItem(**detail.model_dump())
-          # """    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  """
+            return schemas.ShipmentsDetailItem(**detail.model_dump())
+        # """    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  """
         except ShipmentOrderInfo.DoesNotExist:
             # 处理订单不存在的情况
             return {
@@ -222,3 +226,25 @@ class OrderDetail:
         query = query.where(ShipmentOrderInfo.order_code == self.order_code)
         # print(query.get().order_code) # 获取查询结果的第一条记录的order_code
         return query
+
+
+class OrderModify:
+    """出货订单修改"""
+
+    def __init__(self, order_code: str, item: schemas.ShipmentsOrderUpdateRequest):
+        self.order_code = order_code
+        self.item = item
+
+    def modify(self):
+        """修改订单数据"""
+        # peewee方法 若找不到记录返回None
+        r = ShipmentOrderInfo.get_or_none(order_code=self.order_code)
+        # 异常处理
+        if not r:
+            raise Exception("Order not found")
+
+        # Pydantic 模型转换为字典 by_alias=True 确保使用字段别名
+        item = self.item.model_dump(by_alias=True)
+        item["update_time"] = datetime.now()
+        # 执行更新
+        ShipmentOrderInfo.update(**item).where(ShipmentOrderInfo.order_code == self.order_code).execute()
