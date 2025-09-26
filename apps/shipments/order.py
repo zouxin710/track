@@ -22,10 +22,6 @@ class OrderList:
             pageNum=self.filters.pageNum,
             pageSize=self.filters.pageSize,
         )
-        # print(pagination.totalPages) # 2
-        # print(pagination) # totalElements=20 totalPages=2 pageSize=10 pageNum=1
-        # print(pagination.model_dump_json()) # json字符串
-        # print(pagination.model_dump()) # dict
 
         # 拿列表
         # 判断 如果传入的页码数 > 总页数  则返回空列表

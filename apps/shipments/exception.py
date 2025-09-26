@@ -74,6 +74,7 @@ class ExceptionList:
             ShipmentOrderException.exception_node,
             ShipmentOrderException.create_time.alias("exception_date"),
             ShipmentOrderException.status,
+            ShipmentOrderException.update_time
         ).join(
             ShipmentOrderInfo,
             # 通过order_code建立两个表的连接
@@ -117,19 +118,17 @@ class ExceptionsProcessing:
         # 去异常信息表拿异常信息
         query_result = ShipmentOrderException.get_by_id(self.exception_id)
         order_code = query_result.order_code
-        shipment_name = ShipmentOrderInfo.select(ShipmentOrderInfo.shipment_name).where(ShipmentOrderInfo.order_code == order_code).shipment_name
         # 添加异常操作记录表一条记录
         item = self.item.model_dump()
+        item["exception_id"] = self.exception_id
         item["order_code"] = order_code
-        item["shipment_name"] = shipment_name
-        item["exception_type"] = query_result.exception_type
-        item["exception_node"] = query_result.exception_node
-        item["exception_date"] = query_result.exception_date
+        item["operator_uid"] = 1
+        item["operator_name"] = "admin"
         item["create_time"] = datetime.now()
         item["update_time"] = datetime.now()
         ShipmentExceptionHandle.create(**item)
         # 更新异常信息表的处置状态
-        query_result.update(status=self.item.status).execute()
+        query_result.update(status=self.item.status, update_time=datetime.now()).where(ShipmentOrderException.id == self.exception_id).execute()
 
 
 class ExceptionLogs:
@@ -225,6 +224,7 @@ class ExceptionLogs:
             query = query.where(ShipmentOrderInfo.first_leg_tracking_number == f.firstLegTrackingNumber)
         if f.shipmentName:
             query = query.where(ShipmentOrderInfo.shipment_name == f.shipmentName)
-
+        if f.exceptionId:
+            query = query.where(ShipmentOrderException.id == f.exceptionId)
         # query:未排序的Peewee查询对象(ModelSelect)
         return query

@@ -28,7 +28,7 @@ def order_detail(order_code: str):
     return Response(result=result)
 
 
-@order_bp.route("/orders/<orderCode>}/modify", methods=["PUT"])
+@order_bp.route("/orders/<order_code>/modify", methods=["PUT"])
 @validate()
 def order_modify(order_code: str, body: ShipmentsOrderUpdateRequest):
     """修改订单信息"""
@@ -52,7 +52,7 @@ def pending(query: ShipmentsPendingRequest):
     return Response(result=content)
 
 
-@track_bp.route("/first-leg-tracking/{id}/review", methods=["POST"])
+@track_bp.route("/first-leg-tracking/<id>/review", methods=["POST"])
 @validate()
 def review(id: int, body: ShipmentsReviewPostRequest):
     """人工审核提交"""
@@ -76,7 +76,7 @@ def exception(query: ShipmentsExceptionsRequest):
     return Response(result=content)
 
 
-@exception_bp.route("/exceptions/{exception_id}/processing", methods=["POST"])
+@exception_bp.route("/exceptions/<exception_id>/processing", methods=["POST"])
 @validate()
 def exception_processing(exception_id: int, body: ShipmentsExceptionsProcessingRequest):
     """异常操作"""

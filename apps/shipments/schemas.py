@@ -80,20 +80,18 @@ class ShipmentsPendingRequest(BaseModelWithORM):
 
 class ShipmentsReviewPostRequest(BaseModelWithORM):
     """头程轨迹跟踪-审核提交请求体"""
-    orderCode: str = Field(..., title="订单号")
     artificialTrackType: str = Field(..., title="人工轨迹类型", alias="artificial_track_type")
     artificialTrackNode: str = Field(..., title="人工轨迹节点", alias="artificial_track_node")
-    artificialTrackNodeDate: datetime = Field(..., title="人工节点时间", alias="artificial_track_node_date")
-    trackContent: str = Field(..., title="人工轨迹文本说明", alias="track_content")
+    artificialNodeDate: datetime = Field(..., title="人工节点时间", alias="artificial_node_date")
 
 
 class ShipmentsAddNodeRequest(BaseModelWithORM):
     """头程轨迹跟踪-添加节点请求体"""
-    orderCode: str = Field(..., title="订单号")
+    orderCode: str = Field(..., title="订单号", alias="order_code")
+    trackContent: str = Field(..., title="人工轨迹文本说明", alias="track_content")
     artificialTrackType: str = Field(..., title="人工轨迹类型", alias="artificial_track_type")
     artificialTrackNode: str = Field(..., title="人工轨迹节点", alias="artificial_track_node")
-    artificialTrackNodeDate: datetime = Field(..., title="人工节点时间", alias="artificial_track_node_date")
-    artificialTrackText: str = Field(..., title="人工轨迹文本说明", alias="artificial_track_text")
+    artificialNodeDate: datetime = Field(..., title="人工节点时间", alias="artificial_node_date")
 
 
 class ShipmentsExceptionsRequest(BaseModelWithORM):
@@ -119,6 +117,7 @@ class ShipmentsExceptionsLogsRequest(BaseModelWithORM):
     """异常处置-异常处理日志列表请求体"""
     pageSize: int = Field(default=10, title="每页的大小")
     pageNum: int = Field(default=1, title="当前页码")
+    exceptionId: Optional[int] = Field(default=None, title="异常ID")
     orderCode: Optional[str] = Field(default=None, title="订单号")
     firstLegTrackingNumber: Optional[str] = Field(default=None, title="头程追踪号")
     shipmentName: Optional[str] = Field(default=None, title="货件名称")
@@ -261,6 +260,7 @@ class ExceptionsItem(BaseModelWithORM):
     exceptionNode: str = Field(..., title="异常节点", alias="exception_node")
     exceptionDate: datetime = Field(..., title="触发时间", alias="exception_date")
     status: str = Field(..., title="处置状态", alias="status")
+    updateTime: datetime = Field(..., title="最新更新时间", alias="update_time")
 
 
 class ExceptionsJoinItem(BaseModelWithORM):

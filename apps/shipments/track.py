@@ -19,7 +19,7 @@ class TrackingNodes:
 
     def get_tracking(self):
         """获取当下订单的所有轨迹节点"""
-        query = self.query.order_by(ShipmentFirstLegTracking.track_time.asc())
+        query = self.query.order_by(ShipmentFirstLegTracking.track_time.desc())
         # 存放节点的列表
         node_list = []
         for q in query:
@@ -141,7 +141,6 @@ class TrackReview:
         # 添加额外的字段
         item["artificial_review_time"] = datetime.now()
         item["identify_status"] = "COMPLETE"  # 人工已审核
-        item["source"] = 1  # 人工添加
         item['update_time'] = datetime.now()
         # 审核人姓名
 
@@ -159,11 +158,14 @@ class AddNode:
         """添加节点逻辑"""
         item = self.item.model_dump(by_alias=True)
         # 添加额外的字段
+        item["order_code"] = self.item.orderCode
         # 随机生成一个唯一id
         item["node_id"] = str(int(time.time())) + str(random.randint(100, 1000))
+        item["track_content"] = self.item.trackContent  # 人工轨迹文本说明
         item["artificial_review_time"] = datetime.now()
         item["identify_status"] = "COMPLETE"  # 人工已审核
         item["source"] = 1  # 人工添加
+        item["track_time"] = self.item.artificialNodeDate
         item["create_time"] = datetime.now()
         item['update_time'] = datetime.now()
         # 审核人姓名
